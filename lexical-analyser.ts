@@ -3,91 +3,142 @@ const DfaState = {
     Id: 'Id',
     IntConstant: 'IntConstant',
     GT: 'GT',
-    GE: "GE"
-}
+    GE: 'GE',
+    Int: 'Int',
+    ID_int1: 'ID_int1',
+    ID_int2: 'ID_int2',
+    Equal: 'Equal'
+};
 
 const TokenType = {
     Identifier: 'Identifier',
     IntConstant: 'IntConstant',
-    RelOp: 'RelOp'
-}
+    RelOp: 'RelOp',
+    INT: 'INT',
+    Eq: 'Eq'
+};
 
-let nextState = DfaState.Initial;
-
-const isAlpha = (ch) => {
-    return /[a-zA-Z_]/.test(ch);
-}
-
-const isDigit = (ch) => {
-    return /[0-9]/.test(ch);
-}
-
-let token = {
-    type: TokenType.Identifier,
-    text: ''
-}
-
-const initToken = (ch) => {
-    token.text = ch;
-    if(isAlpha(ch)) {
-        nextState = DfaState.Id;
-        token.type = TokenType.Identifier;
-    } else if(isDigit(ch)) {
-        nextState = DfaState.IntConstant;
-        token.type = TokenType.IntConstant;
-    } else if (ch === '>') {
-        nextState = DfaState.GT;
-        token.type = TokenType.RelOp;
-    } else {
-        nextState = DfaState.Initial;
-        token.type = TokenType.Identifier;
-    }
-    return nextState;
-}
-
-const lexicalAnalyser = (code) => {
+const lexicalAnalyser = code => {
     let state = DfaState.Initial;
+
+    const isAlpha = ch => {
+        return /[a-zA-Z_]/.test(ch);
+    };
+
+    const isDigit = ch => {
+        return /[0-9]/.test(ch);
+    };
+
+    let token = {
+        type: TokenType.Identifier,
+        text: '',
+    };
+
+    const initToken = ch => {
+        let nextState = DfaState.Initial;
+        if (state !== DfaState.Initial) {
+            console.log(`${token.type}        ${token.text}`);
+        }
+        token.text = ch;
+        if (isAlpha(ch)) {
+            if (ch == 'i') {
+                token.type = TokenType.INT;
+                nextState = DfaState.ID_int1;
+            } else {
+                nextState = DfaState.Id;
+                token.type = TokenType.Identifier;
+            }
+        } else if (isDigit(ch)) {
+            nextState = DfaState.IntConstant;
+            token.type = TokenType.IntConstant;
+        } else if (ch === '=') {
+            nextState = DfaState.Equal;
+            token.type = TokenType.Eq;
+        } else if (ch === '>') {
+            nextState = DfaState.GT;
+            token.type = TokenType.RelOp;
+        } else {
+            nextState = DfaState.Initial;
+            token.type = TokenType.Identifier;
+        }
+        return nextState;
+    };
     for (let ch of code) {
-        switch(state) {
+        switch (state) {
             case DfaState.Initial:
                 state = initToken(ch);
                 break;
             case DfaState.Id:
-                if(isAlpha(ch) || isDigit(ch)) {
+                if (isAlpha(ch) || isDigit(ch)) {
                     token.text += ch;
                 } else {
-                    console.log(`${token.type}        ${token.text}`)
+                    state = initToken(ch);
+                }
+                break;
+            case DfaState.ID_int1:
+                if (ch === 'n') {
+                    state = DfaState.ID_int2;
+                    token.text += ch;
+                } else if (isAlpha(ch) || isDigit(ch)) {
+                    token.type = TokenType.Identifier;
+                    state = DfaState.Int;
+                } else {
+                    token.type = TokenType.Identifier;
+                    state = initToken(ch);
+                }
+                break;
+            case DfaState.ID_int2:
+                if (ch === 't') {
+                    state = DfaState.Int;
+                    token.text += ch;
+                } else if (isAlpha(ch) || isDigit(ch)) {
+                    token.type = TokenType.Identifier;
+                    state = DfaState.Id;
+                    token.text += ch;
+                } else {
+                    token.type = TokenType.Identifier;
+                    state = initToken(ch);
+                }
+                break;
+            case DfaState.Int:
+                if (isAlpha(ch) || isDigit(ch)) {
+                    token.type = TokenType.Identifier;
+                    state = DfaState.Id;
+                    token.text += ch;
+                } else {
+                    token.type = TokenType.Identifier;
                     state = initToken(ch);
                 }
                 break;
             case DfaState.IntConstant:
-                if(isDigit(ch)) {
+                if (isDigit(ch)) {
                     token.text += ch;
                 } else {
-
-                    console.log(`${token.type}        ${token.text}`)
                     state = initToken(ch);
                 }
                 break;
             case DfaState.GT:
-                if(ch == '=') {
+                if (ch == '=') {
                     state = DfaState.GE;
                     token.text += ch;
                 } else {
-                    console.log(`${token.type}        ${token.text}`)
-                    state = initToken(ch)
+                    state = initToken(ch);
                 }
                 break;
             case DfaState.GE:
-
-                console.log(`${token.type}        ${token.text}`)
+                state = initToken(ch);
+                break;
+            case DfaState.Equal:
                 state = initToken(ch);
                 break;
             default:
                 state = initToken(ch);
         }
     }
-    console.log(`${token.type}        ${token.text}`)
-}
+    console.log(`${token.type}        ${token.text}`);
+};
 
-lexicalAnalyser('age >= 45');
+console.log('int age >= 45');
+lexicalAnalyser('int age >= 45');
+console.log('intA = 10');
+lexicalAnalyser('intA = 10');
