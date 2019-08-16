@@ -1,21 +1,29 @@
 const DfaState = {
     Initial: 'Initial',
-    Id: 'Id',
+    Identifier: 'Identifier',
     IntConstant: 'IntConstant',
     GT: 'GT',
     GE: 'GE',
     Int: 'Int',
     ID_int1: 'ID_int1',
     ID_int2: 'ID_int2',
-    Equal: 'Equal'
+    Equal: 'Equal',
+    Plus: 'Plus',
+    Minus: 'Minus',
+    Star: 'Star',
+    Slash: 'Slash',
 };
 
 const TokenType = {
     Identifier: 'Identifier',
     IntConstant: 'IntConstant',
     RelOp: 'RelOp',
-    INT: 'INT',
-    Eq: 'Eq'
+    Int: 'Int',
+    Equal: 'Equal',
+    Plus: 'Plus',
+    Minus: 'Minus',
+    Star: 'Star',
+    Slash: 'Slash'
 };
 
 const lexicalAnalyser = code => {
@@ -29,23 +37,25 @@ const lexicalAnalyser = code => {
         return /[0-9]/.test(ch);
     };
 
-    let token = {
+    const token = {
         type: TokenType.Identifier,
         text: '',
     };
 
     const initToken = ch => {
         let nextState = DfaState.Initial;
+
         if (state !== DfaState.Initial) {
             console.log(`${token.type}        ${token.text}`);
         }
+
         token.text = ch;
         if (isAlpha(ch)) {
             if (ch == 'i') {
-                token.type = TokenType.INT;
+                token.type = TokenType.Int;
                 nextState = DfaState.ID_int1;
             } else {
-                nextState = DfaState.Id;
+                nextState = DfaState.Identifier;
                 token.type = TokenType.Identifier;
             }
         } else if (isDigit(ch)) {
@@ -53,22 +63,35 @@ const lexicalAnalyser = code => {
             token.type = TokenType.IntConstant;
         } else if (ch === '=') {
             nextState = DfaState.Equal;
-            token.type = TokenType.Eq;
+            token.type = TokenType.Equal;
         } else if (ch === '>') {
             nextState = DfaState.GT;
             token.type = TokenType.RelOp;
+        } else if(ch === '+') {
+            nextState = DfaState.Plus;
+            token.type = TokenType.Plus;
+        } else if(ch === '-') {
+            nextState = DfaState.Minus;
+            token.type = TokenType.Minus;
+        } else if(ch === '*') {
+            nextState = DfaState.Star;
+            token.type = TokenType.Star;
+        } else if(ch === '/') {
+            nextState = DfaState.Slash;
+            token.type = TokenType.Slash;
         } else {
             nextState = DfaState.Initial;
             token.type = TokenType.Identifier;
         }
         return nextState;
     };
+
     for (let ch of code) {
         switch (state) {
             case DfaState.Initial:
                 state = initToken(ch);
                 break;
-            case DfaState.Id:
+            case DfaState.Identifier:
                 if (isAlpha(ch) || isDigit(ch)) {
                     token.text += ch;
                 } else {
@@ -93,7 +116,7 @@ const lexicalAnalyser = code => {
                     token.text += ch;
                 } else if (isAlpha(ch) || isDigit(ch)) {
                     token.type = TokenType.Identifier;
-                    state = DfaState.Id;
+                    state = DfaState.Identifier;
                     token.text += ch;
                 } else {
                     token.type = TokenType.Identifier;
@@ -103,7 +126,7 @@ const lexicalAnalyser = code => {
             case DfaState.Int:
                 if (isAlpha(ch) || isDigit(ch)) {
                     token.type = TokenType.Identifier;
-                    state = DfaState.Id;
+                    state = DfaState.Identifier;
                     token.text += ch;
                 } else {
                     token.type = TokenType.Identifier;
@@ -131,6 +154,18 @@ const lexicalAnalyser = code => {
             case DfaState.Equal:
                 state = initToken(ch);
                 break;
+            case DfaState.Plus:
+                state = initToken(ch);
+                break;
+            case DfaState.Minus:
+                state = initToken(ch);
+                break;
+            case DfaState.Star:
+                state = initToken(ch);
+                break;
+            case DfaState.Slash:
+                state = initToken(ch);
+                break;
             default:
                 state = initToken(ch);
         }
@@ -138,7 +173,8 @@ const lexicalAnalyser = code => {
     console.log(`${token.type}        ${token.text}`);
 };
 
-console.log('int age >= 45');
-lexicalAnalyser('int age >= 45');
-console.log('intA = 10');
-lexicalAnalyser('intA = 10');
+['int age >= 45', 'intA = 10', 'int a = 5 + 1 - 2 / 4'].forEach(example => {
+    console.log(example);
+    lexicalAnalyser(example);
+    console.log('------------');
+})
